@@ -66,7 +66,73 @@ def gaussian_perturb_image(img, sigma=0.1):
 	N = len(img)
 	variance = torch.tensor(np.identity(N) * sigma).float()
 	perturb = torch.normal(0,sigma,size=[N,])
-	return torch.clip(torch.abs(img + perturb),0,1)
+	return torch.clamp(torch.abs(img + perturb),0,1)
+
+def random_mask_frac(img, mask_prob):
+    img_shape = img.shape
+    flat_img = deepcopy(img).flatten()
+    for i in range(len(flat_img)):
+        r = np.random.uniform(0,1)
+        if r <= mask_prob:
+            flat_img[i] = 0.0
+    return flat_img.reshape(img_shape)
+
+def random_mask_frac_handle_color(img, mask_prob):
+	img_shape = img.shape
+	if len(img) == 28*28:
+		return random_mask_frac(img, mask_prob)
+	elif len(img) == 32*32*3:
+		reshp = deepcopy(img).reshape(3,32,32)
+		for i in range(32):
+			for j in range(32):
+				r = np.random.uniform(0,1)
+				if r <= mask_prob:
+					reshp[:,i,j] = 0
+		return reshp.reshape(img_shape)
+	elif len(img) == 64*64*3:
+		reshp = deepcopy(img).reshape(3,64,64)
+		for i in range(64):
+			for j in range(64):
+				r = np.random.uniform(0,1)
+				if r <= mask_prob:
+					reshp[:,i,j] = 0
+		return reshp.reshape(img_shape)
+	else:
+		raise ValueError("image shape not recognized")
+					
+
+def image_inpaint(img, mask_frac):
+    #pixels_to_mask = 
+	if len(img) == (28*28):
+		i = deepcopy(img.reshape(28,28))
+		H,W = i.shape
+		pixels_to_mask = int(H * mask_frac // 2)
+		i[0:pixels_to_mask,:] = 0
+		i[28-pixels_to_mask:28,:] = 0
+		i[:, 0:pixels_to_mask] = 0
+		i[:, 28 - pixels_to_mask:28] = 0
+		return i
+	elif len(img) == (32 * 32 * 3):
+		i = deepcopy(img.reshape(3,32,32))
+		C,H,W = i.shape
+		pixels_to_mask = int(H * mask_frac // 2)
+		i[:,0:pixels_to_mask,:] = 0
+		i[:,32-pixels_to_mask:32,:] = 0
+		i[:,:, 0:pixels_to_mask] = 0
+		i[:,:, 32 - pixels_to_mask:32] = 0
+		return i
+	# imagenet
+	elif len(img) == (64 * 64 * 3):
+		i = deepcopy(img.reshape(3,64,64))
+		C,H,W = i.shape
+		pixels_to_mask = int(H * mask_frac // 2)
+		i[:,0:pixels_to_mask,:] = 0
+		i[:,64-pixels_to_mask:64,:] = 0
+		i[:,:, 0:pixels_to_mask] = 0
+		i[:,:, 64 - pixels_to_mask:64] = 0
+		return i
+	else:
+		raise ValueError("Input data dimensions not recognized")
 
 def binary_to_bipolar(x):
     return torch.sign(x - 0.5)
@@ -115,6 +181,7 @@ def euclidean_distance(X,z):
 
 def general_update_rule(X,z,beta,sim, sep=F.softmax,sep_param=1,norm=True):
 	sim_score = beta * sim(X,z)
+	#print("SIMS: ", sim_score)
 	if norm:
 		sim_score = sim_score / torch.sum(sim_score)
 	sep_score = sep(sim_score,sep_param)
@@ -205,7 +272,7 @@ def reshape_img_list(imglist, imglen, opt_fn = None):
 	return new_imglist
 
 # key functions which actually tests the storage capacity of the associative memory
-def PC_retrieve_store_continuous(imgs,N, P = None, beta=1,num_plot = 5,similarity_metric="error",f=manhatten_distance, image_perturb_fn = halve_continuous_img,sigma=0.5,sep_fn=separation_max, sep_param=1, use_norm = True,ERROR_THRESHOLD = 60, network_type=""):
+def PC_retrieve_store_continuous(imgs,N, P = None, beta=1,num_plot = 5,similarity_metric="error",f=manhatten_distance, image_perturb_fn = halve_continuous_img,sigma=0.5,sep_fn=separation_max, sep_param=1, use_norm = True,ERROR_THRESHOLD = 60, network_type="", return_sqdiff_outputs = False, plot_example_reconstructions = False):
 	X = imgs[0:N,:]
 	img_len = np.prod(np.array(X[0].shape))
 	if len(X.shape) != 2:
@@ -225,6 +292,14 @@ def PC_retrieve_store_continuous(imgs,N, P = None, beta=1,num_plot = 5,similarit
 			if network_type == "classical_hopfield":
 				out = binary_to_bipolar(torch.sign(out))
 			sqdiff = torch.sum(torch.square(X[j,:] - out))
+			if plot_example_reconstructions:
+				plt.imshow(X[j,:].reshape(3,32,32).permute(1,2,0))
+				plt.show()
+				plt.imshow(z.reshape(3,32,32).permute(1,2,0))
+				plt.show()
+				plt.imshow(out.reshape(3,32,32).permute(1,2,0))
+				plt.show()
+				print("SQDIFF: ", sqdiff)
 		else: # heteroassociative
 			P = P[0:N,:]
 			out = heteroassociative_update_rule(X,P,z,beta, f,sep=sep_fn, sep_param=sep_param, norm=use_norm).reshape(img_len)
@@ -251,6 +326,9 @@ def PC_retrieve_store_continuous(imgs,N, P = None, beta=1,num_plot = 5,similarit
 
 
 if __name__ == '__main__':
+	from data import *
+	trainset_cifar, testset_cifar = get_cifar10(10000)
+	imgs = trainset_cifar[0][0]
 	xs = [imgs[i,:].reshape(np.prod(imgs[i,:].shape)) for i in range(100)]
 	plt.subplot(1,2,1)
 	plt.imshow(xs[0].reshape(imgs[0,:].shape).permute(1,2,0))
