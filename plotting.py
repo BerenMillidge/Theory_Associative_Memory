@@ -647,19 +647,6 @@ def run_additional_perturbation_experiments(imgs, dataset_str):
     
 
 if __name__ == '__main__':
-    #trainset_cifar, testset_cifar = get_cifar10(10000)
-    #imgs = trainset_cifar[0][0]
-    NORMALIZE_ERROR_THRESHOLD = True
-    #trainset_mnist, testset_mnist = load_mnist(60000)
-    #imgs = trainset_mnist[0][0]
-    PLOT_RESULTS = True
-    LOAD_DATA = True
-    imgs = []
-    if not LOAD_DATA:
-        imgs = load_tiny_imagenet(N_imgs=10000)
-    # separation functions
-    
- 
     #dataset_str = "mnist_longer_capacity_"
     #dataset_str = "cifar_10_"
     #dataset_str = ""
@@ -667,6 +654,24 @@ if __name__ == '__main__':
     dataset_str = "tiny_"
     #separation functions
     #dataset_str = "imagenet_"
+
+    NORMALIZE_ERROR_THRESHOLD = True
+
+    PLOT_RESULTS = True
+    LOAD_DATA = True
+    imgs = []
+    if not LOAD_DATA:
+        if dataset_str == "tiny_" or dataset_str == "imagenet_":
+            imgs = load_tiny_imagenet(N_imgs=10000)
+        if dataset_str == "mnist_" or dataset_str == "mnist_longer_capacity_":
+            trainset_mnist, testset_mnist = load_mnist(60000)
+            imgs = trainset_mnist[0][0]
+        if dataset_str == "" or dataset_str == "cifar_10_" or dataset_str == "cifar":
+            trainset_cifar, testset_cifar = get_cifar10(10000)
+            imgs = trainset_cifar[0][0]
+
+
+    # separation functions
     run_separation_function_experiments(imgs, dataset_str)   
     # noise levels 
     #run_noise_levels_experiments(imgs, dataset_str)
