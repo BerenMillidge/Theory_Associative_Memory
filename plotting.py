@@ -8,7 +8,11 @@ from data import *
 from copy import deepcopy
 import pickle
 
-def plot_capacity_graphs(Ns, imgs, beta,fs, labels, image_perturb_fn = halve_continuous_img,sep_fn = separation_max, sep_param=1000,sigma=0.1,plot_results = False, error_threshold = 60):
+def plot_capacity_graphs(Ns, imgs, beta,fs, labels, image_perturb_fn = halve_continuous_img,sep_fn = separation_max, sep_param=1000,sigma=0.1,plot_results = False, error_threshold = 60,normalize_error_threshold = True):
+    if normalize_error_threshold:
+        error_threshold = (error_threshold * 784) / np.prod(np.array(imgs[0].shape))
+        print("ERROR THRESHHOLD")
+        print(imgs[0].shape)
     corrects_list = [[] for i in range(len(fs))]
     for i,(f, label) in enumerate(zip(fs, labels)):
         print(label.upper())
@@ -27,13 +31,13 @@ def plot_capacity_graphs(Ns, imgs, beta,fs, labels, image_perturb_fn = halve_con
         plt.show()
     return np.array(corrects_list).reshape(len(fs),len(Ns))
 
-def N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,fn_labels, image_perturb_fn = halve_continuous_img, sep_fn = separation_max, sep_param = 1000, sigma=0.1,sname = "tiny_N_capacity_results.npy", figname = "tiny_N_runs_capacity_graph.jpg", load_data = False, plot_results = True, save_continuously=True):
+def N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,fn_labels, image_perturb_fn = halve_continuous_img, sep_fn = separation_max, sep_param = 1000, sigma=0.1,sname = "tiny_N_capacity_results.npy", figname = "tiny_N_runs_capacity_graph.jpg", load_data = False, plot_results = True, save_continuously=True,normalize_error_threshold = False):
     if not load_data:
         N_corrects = []
         max_N = Ns[-1]
         for n in range(N_runs):
             X = imgs[(max_N*n):(max_N * (n+1))]
-            corrects_list = plot_capacity_graphs(Ns, X, beta, fs, fn_labels, image_perturb_fn=image_perturb_fn, sep_fn = sep_fn, sep_param = sep_param, sigma=sigma)
+            corrects_list = plot_capacity_graphs(Ns, X, beta, fs, fn_labels, image_perturb_fn=image_perturb_fn, sep_fn = sep_fn, sep_param = sep_param, sigma=sigma, normalize_error_threshold=normalize_error_threshold)
             N_corrects.append(corrects_list)
             if save_continuously:
                 prelim_N_corrects = np.array(deepcopy(N_corrects))
@@ -251,7 +255,7 @@ def N_runs_separation_function_graphs(N_runs, Ns, imgs, beta,sep_fns,fn_labels, 
         for i in range(len(sep_fns)):
             plt.plot(Ns, mean_corrects[i,:],label=fn_labels[i])
             plt.fill_between(Ns, mean_corrects[i,:] - std_corrects[i,:], mean_corrects[i,:]+std_corrects[i,:],alpha=0.5)
-        plt.xlabel("Number of Images",fontsize=25)
+        plt.xlabel("Images Stored",fontsize=25)
         plt.ylabel("Fraction Correctly Retrieved",fontsize=25)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
@@ -567,19 +571,19 @@ def run_frac_masking_experiments(imgs, dataset_str):
     beta = 1
     mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_mask_frac_results.npy", figname = dataset_str + "N_runs_mask_fracs.jpg")
     
-def run_similarity_function_experiments(imgs, dataset_str):
+def run_similarity_function_experiments(imgs, dataset_str,normalize_error_threshold=False):
     # similarity functions
-    #Ns = [2,5,10,20,50,100,200,300,500,700,1000]
+    Ns = [2,5,10,20,50,100,200,300,500,700,1000]
     #longer mnist run
     #Ns = [1500,2000,2500,3000]
     # even longer mnist run
-    Ns = [4000,5000,6000,7000,8000,9000,100000]
+    #Ns = [4000,5000,6000,7000,8000,9000,100000]
     N_runs = 5
     beta = 1000
     #fs = [euclidean_distance, manhatten_distance,normalized_dot_product]#,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]#,cosine_similarity]
     fs = [euclidean_distance, manhatten_distance,normalized_dot_product,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]#,cosine_similarity]
     labels = ["Euclidean Distance","Manhatten Distance", "Dot Product","KL Divergence","Reverse KL","Jensen-Shannon"]
-    corrects_list2 = N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,labels,image_perturb_fn = gaussian_perturb_image,sigma=0.5,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_capacity_results.npy", figname = dataset_str + "N_runs_capacity_graph.jpg")
+    corrects_list2 = N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,labels,image_perturb_fn = gaussian_perturb_image,sigma=0.5,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_capacity_results_normalized.npy", figname = dataset_str + "N_runs_capacity_graph_normalized.jpg", normalize_error_threshold=normalize_error_threshold)
  
  
 def run_example_reconstructions(imgs, dataset_str):
@@ -643,37 +647,45 @@ def run_additional_perturbation_experiments(imgs, dataset_str):
     
 
 if __name__ == '__main__':
-    trainset_cifar, testset_cifar = get_cifar10(10000)
-    imgs = trainset_cifar[0][0]
+    #trainset_cifar, testset_cifar = get_cifar10(10000)
+    #imgs = trainset_cifar[0][0]
+    NORMALIZE_ERROR_THRESHOLD = True
     #trainset_mnist, testset_mnist = load_mnist(60000)
     #imgs = trainset_mnist[0][0]
-    #imgs = load_tiny_imagenet(N_imgs=10000)
+    PLOT_RESULTS = True
+    LOAD_DATA = True
+    imgs = []
+    if not LOAD_DATA:
+        imgs = load_tiny_imagenet(N_imgs=10000)
     # separation functions
     
-    PLOT_RESULTS = True
-    LOAD_DATA = False
+ 
     #dataset_str = "mnist_longer_capacity_"
-    dataset_str = "cifar_"
+    #dataset_str = "cifar_10_"
+    #dataset_str = ""
+    #dataset_str = "mnist_"
+    dataset_str = "tiny_"
     #separation functions
+    #dataset_str = "imagenet_"
     run_separation_function_experiments(imgs, dataset_str)   
     # noise levels 
-    run_noise_levels_experiments(imgs, dataset_str)
+    #run_noise_levels_experiments(imgs, dataset_str)
     # frac masking
-    run_frac_masking_experiments(imgs, dataset_str)
+    #run_frac_masking_experiments(imgs, dataset_str)
     # similarity
-    run_similarity_function_experiments(imgs, dataset_str)
+    #run_similarity_function_experiments(imgs, dataset_str, normalize_error_threshold = NORMALIZE_ERROR_THRESHOLD)
     # example reconstructions
-    run_example_reconstructions(imgs, dataset_str)
+    #run_example_reconstructions(imgs, dataset_str)
     # visualize heteroassicative
-    run_visualize_heteroassociative(imgs, dataset_str)
+    #run_visualize_heteroassociative(imgs, dataset_str)
     #heteroassociation experiments
-    heteroassociative_capacity_experiments(imgs, dataset_str)
+    #heteroassociative_capacity_experiments(imgs, dataset_str)
     # reconstruction thresholds -- plotted in example_images.py
-    save_reconstructions_thresholds(imgs,1000)
+    #save_reconstructions_thresholds(imgs,1000)
     # error threshold experiments
-    run_error_threshold_sweep(imgs, dataset_str)
+    #run_error_threshold_sweep(imgs, dataset_str)
     #additional perturbation experiments
-    run_additional_perturbation_experiments(imgs, dataset_str)
+    #run_additional_perturbation_experiments(imgs, dataset_str)
     
 
  
