@@ -8,6 +8,17 @@ from data import *
 from copy import deepcopy
 import pickle
 
+SAVE_FORMAT = "png"
+
+def parse_sname_for_title(sname):
+    if "tiny_" in sname or "imagenet_" in sname:
+        return "ImageNet"
+    if "mnist_" in sname:
+        return "MNIST"
+    else:
+        return "CIFAR10"
+
+
 def plot_capacity_graphs(Ns, imgs, beta,fs, labels, image_perturb_fn = halve_continuous_img,sep_fn = separation_max, sep_param=1000,sigma=0.1,plot_results = False, error_threshold = 60,normalize_error_threshold = True):
     if normalize_error_threshold:
         error_threshold = (error_threshold * 784) / np.prod(np.array(imgs[0].shape))
@@ -53,7 +64,8 @@ def N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,fn_labels, image_perturb_fn
         fig = plt.figure(figsize=(12,10))
         sns.set_theme(context='talk',font='sans-serif',font_scale=1.0)
         sns.despine(left=False,top=True, right=True, bottom=False)
-        plt.title("Memory Capacity by Similarity Function",fontsize=30)
+        dataset = parse_sname_for_title(sname)
+        plt.title(dataset + " Similarity Functions",fontsize=30)
         for i in range(len(fs)):
             plt.plot(Ns, mean_corrects[i,:],label=fn_labels[i])
             plt.fill_between(Ns, mean_corrects[i,:] - std_corrects[i,:], mean_corrects[i,:]+std_corrects[i,:],alpha=0.5)
@@ -61,10 +73,11 @@ def N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,fn_labels, image_perturb_fn
         plt.ylabel("Fraction Correctly Retrieved",fontsize=25)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
-        plt.legend(fontsize=25)
-        plt.ylim(bottom=0)
+        if dataset == "MNIST":
+            plt.legend(fontsize=25)
+        plt.ylim(bottom=0,top=1)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
     return N_corrects
 
@@ -112,7 +125,7 @@ def N_runs_error_threshold_graphs(N_runs, error_thresholds, N_images, imgs, beta
         plt.legend(fontsize=25)
         plt.ylim(bottom=0)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
     return N_corrects
 
@@ -149,7 +162,8 @@ def N_runs_noise_level_graphs(N_runs, N, imgs, beta,fs,fn_labels, sigmas, sep_fn
         fig = plt.figure(figsize=(12,10))
         sns.set_theme(context='talk',font='sans-serif',font_scale=1.0)
         sns.despine(left=False,top=True, right=True, bottom=False)
-        plt.title("Memory Capacity by Noise Level",fontsize=30)
+        dataset = parse_sname_for_title(sname)
+        plt.title(dataset + " Noise Levels",fontsize=30)
         for i in range(len(fs)):
             plt.plot(sigmas, mean_corrects[:,i],label=fn_labels[i])
             plt.fill_between(sigmas, mean_corrects[:,i] - std_corrects[:,i], mean_corrects[:,i]+std_corrects[:,i],alpha=0.5)
@@ -157,10 +171,11 @@ def N_runs_noise_level_graphs(N_runs, N, imgs, beta,fs,fn_labels, sigmas, sep_fn
         plt.ylabel("Fraction Correctly Retrieved",fontsize=25)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
-        plt.legend(fontsize=25)
+        if dataset == "MNIST":
+            plt.legend(fontsize=25)
         plt.ylim(bottom=0)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
     return N_corrects
 
@@ -196,7 +211,8 @@ def N_runs_mask_frac_graphs(N_runs, N, imgs, beta,fs,fn_labels, mask_fracs, sep_
         fig = plt.figure(figsize=(12,10))
         sns.set_theme(context='talk',font='sans-serif',font_scale=1.0)
         sns.despine(left=False,top=True, right=True, bottom=False)
-        plt.title("Memory Capacity by Fraction Masked",fontsize=30)
+        dataset = parse_sname_for_title(sname)
+        plt.title(dataset + " Fraction Masked",fontsize=30)
         for i in range(len(fs)):
             plt.plot(mask_fracs, mean_corrects[:,i],label=fn_labels[i])
             plt.fill_between(mask_fracs, mean_corrects[:,i] - std_corrects[:,i], mean_corrects[:,i]+std_corrects[:,i],alpha=0.5)
@@ -204,10 +220,11 @@ def N_runs_mask_frac_graphs(N_runs, N, imgs, beta,fs,fn_labels, mask_fracs, sep_
         plt.ylabel("Fraction Correctly Retrieved",fontsize=25)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
-        plt.legend(fontsize=25)
+        if dataset == "MNIST":
+            plt.legend(fontsize=25)
         plt.ylim(bottom=0)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
     return N_corrects
 
@@ -250,7 +267,8 @@ def N_runs_separation_function_graphs(N_runs, Ns, imgs, beta,sep_fns,fn_labels, 
         fig = plt.figure(figsize=(12,10))
         sns.set_theme(context='talk',font='sans-serif',font_scale=1.0)
         sns.despine(left=False,top=True, right=True, bottom=False)
-        plt.title("Memory Capacity by Separation Functions",fontsize=30)
+        dataset = parse_sname_for_title(sname)
+        plt.title(dataset + " Separation Functions",fontsize=30)
         xs = np.arange(0, len(Ns))
         for i in range(len(sep_fns)):
             plt.plot(Ns, mean_corrects[i,:],label=fn_labels[i])
@@ -259,10 +277,11 @@ def N_runs_separation_function_graphs(N_runs, Ns, imgs, beta,sep_fns,fn_labels, 
         plt.ylabel("Fraction Correctly Retrieved",fontsize=25)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
-        plt.legend(fontsize=25)
-        plt.ylim(bottom=0)
+        if dataset == "MNIST":
+            plt.legend(fontsize=25)
+        plt.ylim(bottom=0,top=1)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
     return N_corrects
 
@@ -346,7 +365,7 @@ def generate_demonstration_reconstructions(imgs, N, f=manhatten_distance, image_
     plt.subplots_adjust(wspace=0, hspace=0)
     #plt.tight_layout()
 
-    plt.savefig(sname, format="jpeg",bbox_inches = "tight", pad_inches = 0)
+    plt.savefig(sname, format=SAVE_FORMAT,bbox_inches = "tight", pad_inches = 0)
     plt.show()
 
 def visualize_heteroassociative_MCHN(imgs, N,N_imgs=5, f=manhatten_distance, sep_fn = separation_softmax, sep_param =100000, use_norm=True):
@@ -392,7 +411,7 @@ def visualize_heteroassociative_MCHN(imgs, N,N_imgs=5, f=manhatten_distance, sep
     #plt.tight_layout()
     fig.subplots_adjust(wspace=0, hspace=0)
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.savefig("figures/MCHN_cifar10_heteroassociation_4.jpg", format="jpeg",bbox_inches="tight",pad_inches = 0)
+    plt.savefig("figures/MCHN_cifar10_heteroassociation_4." + SAVE_FORMAT, format=SAVE_FORMAT,bbox_inches="tight",pad_inches = 0)
     plt.show()
 
 def visualize_heteroassociative_hopfield(imgs, N,N_imgs=5, f=normalized_dot_product, sep_fn = separation_softmax, sep_param =100000, use_norm=True):
@@ -452,7 +471,7 @@ def visualize_heteroassociative_hopfield(imgs, N,N_imgs=5, f=normalized_dot_prod
     #plt.tight_layout()
     fig.subplots_adjust(wspace=0, hspace=0)
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.savefig("figures/classical_HN_MNIST_heteroassociation_2.jpg", format="jpeg",bbox_inches="tight", pad_inches=0)
+    plt.savefig("figures/classical_HN_MNIST_heteroassociation_2." + SAVE_FORMAT, format=SAVE_FORMAT,bbox_inches="tight", pad_inches=0)
     plt.show()
     
 
@@ -521,7 +540,7 @@ def N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f = normalized_dot_p
         fig = plt.figure(figsize=(12,10))
         sns.set_theme(context='talk',font='sans-serif',font_scale=1.0)
         sns.despine(left=False,top=True, right=True, bottom=False)
-        plt.title("Memory Capacity for Auto vs Heteroassociative",fontsize=30)
+        plt.title("Memory Capacity for Auto vs. Heteroassociative",fontsize=30)
         # auto
         plt.plot(Ns, mean_auto,label="Autoassociative")
         plt.fill_between(Ns, mean_auto - std_auto, mean_auto+std_auto,alpha=0.5)
@@ -535,7 +554,7 @@ def N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f = normalized_dot_p
         plt.legend(fontsize=25)
         plt.ylim(bottom=0)
         fig.tight_layout()
-        plt.savefig(figname, format="jpeg")
+        plt.savefig(figname, format=SAVE_FORMAT)
         plt.show()
         
     return N_corrects_autoassociative, N_corrects_heteroassociative
@@ -550,7 +569,7 @@ def run_separation_function_experiments(imgs, dataset_str):
     beta = 1
     sep_param = 1000
     N_runs = 5
-    N_runs_separation_function_graphs(N_runs, Ns, imgs,  beta, sep_fns, sep_labels, load_data = LOAD_DATA, plot_results = PLOT_RESULTS,sname=dataset_str + "N_runs_separation_function_results_2.npy", figname= dataset_str+ "N_runs_separation_functions_2.jpg")
+    N_runs_separation_function_graphs(N_runs, Ns, imgs,  beta, sep_fns, sep_labels, load_data = LOAD_DATA, plot_results = PLOT_RESULTS,sname=dataset_str + "N_runs_separation_function_results_2.npy", figname= dataset_str+ "N_runs_separation_functions_3." + SAVE_FORMAT)
     
 def run_noise_levels_experiments(imgs, dataset_str):
     sigmas = [0.05,0.1,0.2,0.3,0.5,0.8,1,1.5]#,2]
@@ -559,7 +578,7 @@ def run_noise_levels_experiments(imgs, dataset_str):
     fs = [euclidean_distance, manhatten_distance,normalized_dot_product,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]
     labels = ["Euclidean Distance","Manhattan Distance", "Dot Product", "KL divergence","Reverse KL","Jensen-Shannon"]
     beta = 1
-    corrects_list = N_runs_noise_level_graphs(N_runs, N,imgs,beta,fs,labels,sigmas, load_data=LOAD_DATA,plot_results = PLOT_RESULTS,sname=dataset_str + "N_noise_level_results.npy", figname = dataset_str + "N_runs_noise_levels.jpg")
+    corrects_list = N_runs_noise_level_graphs(N_runs, N,imgs,beta,fs,labels,sigmas, load_data=LOAD_DATA,plot_results = PLOT_RESULTS,sname=dataset_str + "2_N_noise_level_results.npy", figname = dataset_str + "N_runs_noise_levels_3." + SAVE_FORMAT)
     print(corrects_list.shape)
     
 def run_frac_masking_experiments(imgs, dataset_str):
@@ -569,11 +588,12 @@ def run_frac_masking_experiments(imgs, dataset_str):
     fs = [euclidean_distance, manhatten_distance,normalized_dot_product,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]
     labels = ["Euclidean Distance","Manhattan Distance", "Dot Product", "KL Divergence","Reverse KL","Jensen-Shannon"]
     beta = 1
-    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_mask_frac_results.npy", figname = dataset_str + "N_runs_mask_fracs.jpg")
+    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_mask_frac_results.npy", figname = dataset_str + "N_runs_mask_fracs_2." + SAVE_FORMAT)
     
 def run_similarity_function_experiments(imgs, dataset_str,normalize_error_threshold=False):
     # similarity functions
     Ns = [2,5,10,20,50,100,200,300,500,700,1000]
+    #Ns = [10,20,50,100,200,300,500,700,1000]
     #longer mnist run
     #Ns = [1500,2000,2500,3000]
     # even longer mnist run
@@ -583,7 +603,7 @@ def run_similarity_function_experiments(imgs, dataset_str,normalize_error_thresh
     #fs = [euclidean_distance, manhatten_distance,normalized_dot_product]#,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]#,cosine_similarity]
     fs = [euclidean_distance, manhatten_distance,normalized_dot_product,KL_divergence,reverse_KL_divergence,Jensen_Shannon_divergence]#,cosine_similarity]
     labels = ["Euclidean Distance","Manhatten Distance", "Dot Product","KL Divergence","Reverse KL","Jensen-Shannon"]
-    corrects_list2 = N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,labels,image_perturb_fn = gaussian_perturb_image,sigma=0.5,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_capacity_results_normalized.npy", figname = dataset_str + "N_runs_capacity_graph_normalized.jpg", normalize_error_threshold=normalize_error_threshold)
+    corrects_list2 = N_runs_capacity_graphs(N_runs, Ns, imgs, beta,fs,labels,image_perturb_fn = gaussian_perturb_image,sigma=0.5,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "N_capacity_results.npy", figname = dataset_str + "N_runs_capacity_graph_normalized_2." + SAVE_FORMAT, normalize_error_threshold=normalize_error_threshold)
  
  
 def run_example_reconstructions(imgs, dataset_str):
@@ -592,8 +612,8 @@ def run_example_reconstructions(imgs, dataset_str):
     generate_demonstration_reconstructions(imgs, 100, perturb_vals= sigmas)
     generate_demonstration_reconstructions(imgs, 50, perturb_vals= mask_fracs)   
     mask_fracs = [0.1,0.2,0.3,0.4,0.5,0.6,0.7]
-    generate_demonstration_reconstructions(imgs, 50, image_perturb_fn = random_mask_frac, perturb_vals= mask_fracs,sname="figures/random_mask_fractions.jpg")
-    generate_demonstration_reconstructions(imgs, 50, image_perturb_fn = image_inpaint, perturb_vals= mask_fracs,sname="figures/image_inpainting_fraction.jpg")
+    generate_demonstration_reconstructions(imgs, 50, image_perturb_fn = random_mask_frac, perturb_vals= mask_fracs,sname="figures/random_mask_fractions." + SAVE_FORMAT)
+    generate_demonstration_reconstructions(imgs, 50, image_perturb_fn = image_inpaint, perturb_vals= mask_fracs,sname="figures/image_inpainting_fraction." + SAVE_FORMAT)
     
 def run_visualize_heteroassociative(imgs, dataset_str):
     visualize_heteroassociative_MCHN(imgs, 15,6)
@@ -609,7 +629,7 @@ def heteroassociative_capacity_experiments(imgs, dataset_str):
     beta = 1000
     f = normalized_dot_product
     sep_fn = separation_max
-    N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f, image_perturb_fn = gaussian_perturb_image, sep_fn = separation_max, sep_param = 1000, sigma=0.3,sname = dataset_str + "capacity_comparison_gaussian", figname = dataset_str + "auto_hetero_comparison_gaussian.jpg", load_data = False, plot_results = True, save_continuously=True)
+    N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f, image_perturb_fn = gaussian_perturb_image, sep_fn = separation_max, sep_param = 1000, sigma=0.3,sname = dataset_str + "capacity_comparison_gaussian", figname = dataset_str + "auto_hetero_comparison_gaussian." + SAVE_FORMAT, load_data = False, plot_results = True, save_continuously=True)
     
 
     # heteroassociative for mnist classical hopfield
@@ -619,7 +639,7 @@ def heteroassociative_capacity_experiments(imgs, dataset_str):
     beta = 1
     f = normalized_dot_product
     sep_fn = separation_identity
-    N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f, image_perturb_fn = gaussian_perturb_image, sep_fn = sep_fn, sep_param = 1000, sigma=0.0000001,sname = dataset_str + "capacity_comparison_gaussian", figname = dataset_str + "auto_hetero_comparison_gaussian.jpg", load_data = False, plot_results = True, save_continuously=True,network_type = "classical_hopfield")
+    N_runs_auto_vs_heteroassociative(N_runs, Ns, imgs, beta,f, image_perturb_fn = gaussian_perturb_image, sep_fn = sep_fn, sep_param = 1000, sigma=0.0000001,sname = dataset_str + "capacity_comparison_gaussian", figname = dataset_str + "auto_hetero_comparison_gaussian." + SAVE_FORMAT, load_data = False, plot_results = True, save_continuously=True,network_type = "classical_hopfield")
     
 def run_error_threshold_sweep(imgs, dataset_str):
     #run cifar threshold sweep
@@ -630,7 +650,7 @@ def run_error_threshold_sweep(imgs, dataset_str):
     beta = 1
     fs = [euclidean_distance, manhatten_distance,normalized_dot_product]#,cosine_similarity]
     labels = ["Euclidean Distance","Manhatten Distance", "Dot Product"]
-    corrects_list = N_runs_error_threshold_graphs(N_runs=N_runs, error_thresholds=thresholds, N_images=N_images, imgs=imgs, beta=beta, fs=fs, fn_labels = labels, image_perturb_fn = halve_continuous_img, sep_fn = separation_max, sep_param=10000, sigma=0.1, sname="cifar10_error_threshold_sweep_6.npy", figname="cifar10_error_threshold_sweep_6.jpg", load_data = False, plot_results = True, save_continuously=True)
+    corrects_list = N_runs_error_threshold_graphs(N_runs=N_runs, error_thresholds=thresholds, N_images=N_images, imgs=imgs, beta=beta, fs=fs, fn_labels = labels, image_perturb_fn = halve_continuous_img, sep_fn = separation_max, sep_param=10000, sigma=0.1, sname="cifar10_error_threshold_sweep_6.npy", figname="cifar10_error_threshold_sweep_6." + SAVE_FORMAT, load_data = False, plot_results = True, save_continuously=True)
 
 def run_additional_perturbation_experiments(imgs, dataset_str):
     mask_fracs = [0.1,0.2,0.3,0.4,0.5,0.6,0.7]
@@ -641,9 +661,9 @@ def run_additional_perturbation_experiments(imgs, dataset_str):
     beta = 1
     #random mask frac
     #mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "random_mask_frac_results_5.npy", figname = dataset_str + "N_runs_random_mask_fracs_5.jpg",image_perturb_fn=random_mask_frac)
-    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "random_mask_frac_results_proper_color.npy", figname = dataset_str + "N_runs_random_mask_fracs_proper_color.jpg",image_perturb_fn=random_mask_frac_handle_color)
+    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "random_mask_frac_results_proper_color.npy", figname = dataset_str + "N_runs_random_mask_fracs_proper_color." + SAVE_FORMAT,image_perturb_fn=random_mask_frac_handle_color)
     #inpainting
-    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "inpainting_mask_frac_results_2.npy", figname = dataset_str + "N_runs_inpainting_mask_fracs_2.jpg",image_perturb_fn=image_inpaint)
+    mask_frac_corrects = N_runs_mask_frac_graphs(N_runs,N,imgs,beta,fs,labels,mask_fracs,load_data = LOAD_DATA,plot_results=PLOT_RESULTS,sname = dataset_str + "inpainting_mask_frac_results_2.npy", figname = dataset_str + "N_runs_inpainting_mask_fracs_2." + SAVE_FORMAT,image_perturb_fn=image_inpaint)
     
 
 if __name__ == '__main__':
@@ -661,7 +681,7 @@ if __name__ == '__main__':
     LOAD_DATA = True
     imgs = []
     if not LOAD_DATA:
-        if dataset_str == "tiny_" or dataset_str == "imagenet_":
+        if dataset_str == "tiny_" or dataset_str == "imagenet_" or dataset_str == "tiny_2_":
             imgs = load_tiny_imagenet(N_imgs=10000)
         if dataset_str == "mnist_" or dataset_str == "mnist_longer_capacity_":
             trainset_mnist, testset_mnist = load_mnist(60000)
@@ -672,13 +692,14 @@ if __name__ == '__main__':
 
 
     # separation functions
-    run_separation_function_experiments(imgs, dataset_str)   
+    #run_separation_function_experiments(imgs, dataset_str)   
     # noise levels 
     #run_noise_levels_experiments(imgs, dataset_str)
     # frac masking
     #run_frac_masking_experiments(imgs, dataset_str)
     # similarity
-    #run_similarity_function_experiments(imgs, dataset_str, normalize_error_threshold = NORMALIZE_ERROR_THRESHOLD)
+    
+    run_similarity_function_experiments(imgs, dataset_str, normalize_error_threshold = NORMALIZE_ERROR_THRESHOLD)
     # example reconstructions
     #run_example_reconstructions(imgs, dataset_str)
     # visualize heteroassicative
